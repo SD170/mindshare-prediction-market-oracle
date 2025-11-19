@@ -1,0 +1,11 @@
+[
+  {
+    "name": "Alice",
+    "privateKey": "0xYourPrivateKeyHere"
+  },
+  {
+    "name": "Bob",
+    "privateKey": "0xYourPrivateKeyHere"
+  }
+]
+

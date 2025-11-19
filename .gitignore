@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+
+# Config files with sensitive data
+config/test-users.json
+config/contracts.json
+
+# Old data files (now in MongoDB)
+data/
+markets.json
+
