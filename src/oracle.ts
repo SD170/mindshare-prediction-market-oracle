@@ -4,7 +4,6 @@ import { getSigner, config, MarketConfig, getContracts } from "./config.ts";
 import {
   determineWinner,
   generateBlobHash,
-  randomizeLeaderboard,
   Project,
 } from "./utils.ts";
 
@@ -188,22 +187,22 @@ export async function postResolution(
  * Process all markets and post resolutions
  */
 export async function processMarkets(): Promise<void> {
-  console.log("Loading leaderboard snapshot...");
-  const baseLeaderboard = await loadLeaderboardSnapshot();
-  console.log(`Loaded leaderboard with ${baseLeaderboard.length} projects`);
-  console.log("Top 10 (before randomization):", baseLeaderboard.slice(0, 10).map(p => p.name).join(", "));
+  console.log("Loading leaderboard snapshot (latest index for today)...");
+  const leaderboardSnapshot = await loadLeaderboardSnapshot();
+  console.log(`Loaded leaderboard with ${leaderboardSnapshot.length} projects`);
+  console.log("Top 10:", leaderboardSnapshot.slice(0, 10).map(p => p.name).join(", "));
   
-  // Randomize the leaderboard
-  console.log("\nRandomizing leaderboard...");
-  const randomizedLeaderboard = randomizeLeaderboard(baseLeaderboard);
-  console.log("Top 10 (after randomization):", randomizedLeaderboard.slice(0, 10).map(p => p.name).join(", "));
+  // Log key projects for debugging
+  console.log("\n📊 Key projects in loaded snapshot:");
+  ["Scroll", "Morpho", "Jupiter", "Fantom", "Gains Network", "Drift Protocol"].forEach(projectName => {
+    const project = leaderboardSnapshot.find(p => p.name === projectName);
+    if (project) {
+      console.log(`  ${projectName}: Rank ${project.rank} (${project.rank <= 10 ? '✅ IN TOP 10' : '❌ NOT IN TOP 10'})`);
+    }
+  });
   
-  // Save the randomized snapshot (creates new index for today)
-  console.log("\nSaving randomized snapshot...");
-  await saveLeaderboardSnapshot(randomizedLeaderboard);
-  
-  // Use the randomized version for market resolution
-  const leaderboardSnapshot = randomizedLeaderboard;
+  // NOTE: We use the leaderboard snapshot AS-IS (already randomized by admin regeneration)
+  // The oracle does NOT randomize again - it uses whatever snapshot is in the database
 
   console.log("Loading markets from API...");
   const markets = await loadMarkets();
@@ -263,7 +262,9 @@ export async function processMarkets(): Promise<void> {
       );
 
       console.log(`  ✅ Market ready for resolution`);
-      console.log(`  Winner: ${resolution.winner}`);
+      console.log(`  Winner: ${resolution.winner} (${market.type === 'top10' 
+        ? (resolution.winner === 1 ? 'Yes - In Top 10' : 'No - Not in Top 10')
+        : (resolution.winner === 1 ? market.projectA : market.projectB)})`);
       console.log(`  Snapshot hash: ${resolution.snapshotHash}`);
       console.log(`  Resolved at: ${resolution.resolvedAt} (${new Date(resolution.resolvedAt * 1000).toISOString()})`);
 

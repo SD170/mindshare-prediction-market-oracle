@@ -49,14 +49,36 @@ export function determineWinner(
   const snapshotHash = hashJson(snapshotJson);
 
   if (market.type === "top10") {
-    const project = randomizedLeaderboard.find(
+    // Try exact match first
+    let project = randomizedLeaderboard.find(
       (p) => p.name === market.projectName
     );
+    
+    // If not found, try case-insensitive match
+    if (!project && market.projectName) {
+      project = randomizedLeaderboard.find(
+        (p) => p.name.toLowerCase() === market.projectName!.toLowerCase()
+      );
+    }
+    
+    // If still not found, log all project names for debugging
     if (!project) {
+      console.error(`  ❌ Project "${market.projectName}" not found in leaderboard!`);
+      console.error(`  Available projects (first 20):`, randomizedLeaderboard.slice(0, 20).map(p => p.name).join(", "));
       throw new Error(`Project ${market.projectName} not found in leaderboard`);
     }
+    
     // Winner 1 = in top 10, Winner 2 = not in top 10
     const winner: 1 | 2 = project.rank <= 10 ? 1 : 2;
+    
+    console.log(`  📊 Top-10 Market Resolution:`);
+    console.log(`     Market Project Name: "${market.projectName}"`);
+    console.log(`     Found Project Name: "${project.name}"`);
+    console.log(`     Rank: ${project.rank}`);
+    console.log(`     In Top 10: ${project.rank <= 10 ? 'Yes ✅' : 'No ❌'}`);
+    console.log(`     Winner: ${winner} (${winner === 1 ? 'Yes (Top 10)' : 'No (Not Top 10)'})`);
+    console.log(`     This means: Users who bet "${winner === 1 ? 'Yes' : 'No'}" will win`);
+    
     return { winner, snapshotHash };
   } else if (market.type === "h2h") {
     const projectA = randomizedLeaderboard.find(
